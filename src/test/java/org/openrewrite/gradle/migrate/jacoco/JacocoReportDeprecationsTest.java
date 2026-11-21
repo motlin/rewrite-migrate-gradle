@@ -577,6 +577,138 @@ class JacocoReportDeprecationsTest implements RewriteTest {
         }
 
         @Test
+        void testSuiteTaskInGroovy() {
+            rewriteRun(
+              buildGradle(
+                """
+                  allprojects {
+                      apply plugin: 'jvm-test-suite'
+
+                      testing {
+                          suites {
+                              integrationTest(JvmTestSuite) {
+                                  useJUnitJupiter()
+                              }
+                          }
+                      }
+
+                      test {
+                          reports.junitXml.destination = file('build/test-results')
+                      }
+
+                      integrationTest {
+                          reports.junitXml.destination = file('build/test-integration-results')
+                      }
+                  }
+                  """,
+                """
+                  allprojects {
+                      apply plugin: 'jvm-test-suite'
+
+                      testing {
+                          suites {
+                              integrationTest(JvmTestSuite) {
+                                  useJUnitJupiter()
+                              }
+                          }
+                      }
+
+                      test {
+                          reports.junitXml.outputLocation = file('build/test-results')
+                      }
+
+                      integrationTest {
+                          reports.junitXml.outputLocation = file('build/test-integration-results')
+                      }
+                  }
+                  """
+              )
+            );
+        }
+
+        @Test
+        void testSuitesDeclaredInOtherForms() {
+            rewriteRun(
+              buildGradle(
+                """
+                  testing {
+                      suites {
+                          functionalTest(JvmTestSuite)
+                          register('systemTest', JvmTestSuite)
+                      }
+                  }
+                  testing.suites {
+                      smokeTest(JvmTestSuite)
+                  }
+                  testing.suites.register('e2eTest', JvmTestSuite)
+
+                  functionalTest {
+                      reports.html.enabled = false
+                  }
+                  systemTest.reports.junitXml.destination = file('system')
+                  tasks.smokeTest {
+                      reports {
+                          junitXml.destination file('smoke')
+                      }
+                  }
+                  tasks.named('e2eTest') {
+                      reports.html.enabled = false
+                  }
+                  """,
+                """
+                  testing {
+                      suites {
+                          functionalTest(JvmTestSuite)
+                          register('systemTest', JvmTestSuite)
+                      }
+                  }
+                  testing.suites {
+                      smokeTest(JvmTestSuite)
+                  }
+                  testing.suites.register('e2eTest', JvmTestSuite)
+
+                  functionalTest {
+                      reports.html.required = false
+                  }
+                  systemTest.reports.junitXml.outputLocation = file('system')
+                  tasks.smokeTest {
+                      reports {
+                          junitXml.outputLocation = file('smoke')
+                      }
+                  }
+                  tasks.named('e2eTest') {
+                      reports.html.required = false
+                  }
+                  """
+              )
+            );
+        }
+
+        @Test
+        void doNotChangeTaskNamedLikeANonTestDeclaration() {
+            rewriteRun(
+              buildGradle(
+                """
+                  sourceSets {
+                      integrationTest
+                  }
+                  custom {
+                      suites {
+                          functionalTest(JvmTestSuite)
+                      }
+                  }
+                  integrationTest {
+                      reports.html.enabled = false
+                  }
+                  functionalTest {
+                      reports.html.enabled = false
+                  }
+                  """
+              )
+            );
+        }
+
+        @Test
         void qualityPluginsInGroovy() {
             rewriteRun(
               buildGradle(

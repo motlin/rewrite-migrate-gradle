@@ -261,6 +261,42 @@ class MigrateTaskOutputPropertiesTest implements RewriteTest {
     }
 
     @Test
+    void testSuiteTasks() {
+        rewriteRun(
+          buildGradle(
+            """
+              subprojects {
+                  testing {
+                      suites {
+                          integrationTest(JvmTestSuite)
+                          functionalTest(JvmTestSuite)
+                      }
+                  }
+                  integrationTest {
+                      binResultsDir = file('it')
+                  }
+                  functionalTest.binResultsDir = file('ft')
+              }
+              """,
+            """
+              subprojects {
+                  testing {
+                      suites {
+                          integrationTest(JvmTestSuite)
+                          functionalTest(JvmTestSuite)
+                      }
+                  }
+                  integrationTest {
+                      binaryResultsDirectory = file('it')
+                  }
+                  functionalTest.binaryResultsDirectory = file('ft')
+              }
+              """
+          )
+        );
+    }
+
+    @Test
     void doNotChangeSamePropertiesOnOtherOwners() {
         rewriteRun(
           buildGradle(
